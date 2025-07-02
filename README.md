@@ -45,22 +45,6 @@ git clone https://github.com/upseem/comfyui_sun_nodes.git
 
 所有节点将出现在 ComfyUI 的：
 
-```
-CyberEveLoop🐰·Chen定制
-```
-
-分类中。
-
----
-
-## 🛠 未来计划
-
-* ✅ 支持带 `mask` 的批处理循环
-* 🧪 支持条件控制流（如跳过某帧）
-* 🚧 集成前端交互组件（基于 React）
-* 🧩 更多图像/视频增强相关节点
-
----
 
 ## 📄 License
 
@@ -75,6 +59,5 @@ CyberEveLoop🐰·Chen定制
 
 GitHub 地址：[https://github.com/upseem/comfyui\_sun\_nodes](https://github.com/upseem/comfyui_sun_nodes)
 
-```
 
 
