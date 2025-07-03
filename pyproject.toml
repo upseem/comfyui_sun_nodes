@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui_sun_nodes"
-version = "0.0.4"
+version = "0.0.5"
 description = "Custom ComfyUI nodes by SunX.AI"
 authors = [
   {name = "SunX AI", email = "sunx.ai@hotmail.com"}
@@ -31,6 +31,7 @@ dev = [
 [project.urls]
 bugs = "https://github.com/upseem/comfyui_sun_nodes/issues"
 homepage = "https://github.com/upseem/comfyui_sun_nodes"
+Repository = "https://github.com/upseem/comfyui_sun_nodes"
 
 
 [tool.comfy]
