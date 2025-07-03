@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui_sun_nodes"
-version = "0.0.1"
+version = "0.0.2"
 description = "Custom ComfyUI nodes by SunX.AI"
 authors = [
   {name = "SunX AI", email = "sunx.ai@hotmail.com"}
@@ -34,9 +34,9 @@ homepage = "https://github.com/upseem/comfyui_sun_nodes"
 
 
 [tool.comfy]
-PublisherId = "upseem"
+PublisherId = "sunxai"
 DisplayName = "comfyui_Sun_nodes"
-Icon = ""
+Icon = "https://avatars.githubusercontent.com/u/124853686"
 
 
 [tool.setuptools.package-data]
