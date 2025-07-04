@@ -36,7 +36,7 @@ Repository = "https://github.com/upseem/comfyui_sun_nodes"
 
 [tool.comfy]
 PublisherId = "sunxai"
-DisplayName = "comfyui_Sun_nodes"
+DisplayName = "ComfyUI Sun Nodes"
 Icon = "https://avatars.githubusercontent.com/u/124853686"
 
 

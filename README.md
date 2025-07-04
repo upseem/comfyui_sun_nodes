@@ -18,6 +18,9 @@
 - `Batch Image Loop Open SunxAI`：读取图像批次，按索引逐张送出
 - `Batch Image Loop Close SunxAI`：接收每次循环结果，自动拼接最终结果
 
+
+![视频转动漫工作流](./example_workflows/Sun_sample_workflow.png)
+
 📌 **特点：**
 
 - 🚀 **逐帧处理**：每一张图像会被完整处理后，才进入下一张循环（不是在采样时同时执行多帧）
