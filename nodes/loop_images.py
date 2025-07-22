@@ -1,6 +1,7 @@
 
 from comfy_execution.graph_utils import GraphBuilder, is_link
-from ..tools.tools import VariantSupport
+
+from comfyui_sun_nodes.tools.tools import VariantSupport
 import torch.nn.functional as F
 import torch
 from nodes import NODE_CLASS_MAPPINGS as ALL_NODE_CLASS_MAPPINGS
