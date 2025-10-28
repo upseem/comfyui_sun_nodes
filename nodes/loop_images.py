@@ -1,7 +1,7 @@
 
 from comfy_execution.graph_utils import GraphBuilder, is_link
 
-from comfyui_sun_nodes.tools.tools import VariantSupport
+from ..tools.tools import VariantSupport
 import torch.nn.functional as F
 import torch
 from nodes import NODE_CLASS_MAPPINGS as ALL_NODE_CLASS_MAPPINGS
@@ -224,16 +224,3 @@ class BatchImageLoopCloseSun:
                 contained[child_id] = True
                 self.collect_contained(child_id, upstream, contained)
 
-
-
-
-
-Loop_CLASS_MAPPINGS = {
-    "SunxAI_BatchImageLoopOpenChen": BatchImageLoopOpenSun,
-    "SunxAI_BatchImageLoopCloseChen": BatchImageLoopCloseSun,
-}
-
-Loop_DISPLAY_NAME_MAPPINGS = {
-    "SunxAI_BatchImageLoopOpenChen": "Batch Image Loop Open SunxAI",
-    "SunxAI_BatchImageLoopCloseChen": "Batch Image Loop Close SunxAI",
-}
