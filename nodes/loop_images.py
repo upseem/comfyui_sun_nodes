@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 
 from comfy_execution.graph_utils import GraphBuilder, is_link
+import folder_paths
 
 from ..tools.tools import VariantSupport
 import torch.nn.functional as F
@@ -63,8 +64,13 @@ class BatchImageLoopOpenSun:
         if batch_id is None:
             batch_id = uuid.uuid4().hex[:8]
 
-        batch_path = os.path.join(output_dir, batch_id) if output_dir else ""
-        if batch_path and iteration_count == 0:
+        base_output = folder_paths.get_output_directory()
+        if output_dir:
+            batch_path = os.path.join(base_output, output_dir, batch_id)
+        else:
+            batch_path = os.path.join(base_output, "loop_batch", batch_id)
+
+        if iteration_count == 0:
             os.makedirs(batch_path, exist_ok=True)
             print(f"[chen] Created batch directory: {batch_path}")
 
@@ -116,8 +122,6 @@ class BatchImageLoopCloseSun:
         return image
 
     def save_image(self, image, batch_path, index):
-        if not batch_path:
-            return
         img_np = (image.squeeze(0).cpu().numpy() * 255).clip(0, 255).astype(np.uint8)
         img_pil = Image.fromarray(img_np)
         filepath = os.path.join(batch_path, f"{index:05d}.png")
@@ -149,10 +153,7 @@ class BatchImageLoopCloseSun:
 
         if iteration_count == max_iterations - 1:
             print(f"[chen] Loop finished, loading results from {batch_path}")
-            if batch_path:
-                result_images = self.load_all_images(batch_path, max_iterations, device)
-            else:
-                result_images = current_image
+            result_images = self.load_all_images(batch_path, max_iterations, device)
             return (result_images, batch_path)
 
         open_node = flow_control[0]
