@@ -203,6 +203,7 @@ class BatchImageLoopCloseSun:
 
         new_open = graph.lookup_node(open_node)
         new_open.set_input("iteration_count", iteration_count + 1)
+        new_open.set_input("batch_id", os.path.basename(batch_path))
         if pass_back:
             new_open.set_input("previous_image", current_image)
 
