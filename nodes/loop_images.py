@@ -1,3 +1,7 @@
+import os
+import uuid
+from PIL import Image
+import numpy as np
 
 from comfy_execution.graph_utils import GraphBuilder, is_link
 
@@ -17,17 +21,19 @@ class BatchImageLoopOpenSun:
         inputs = {
             "required": {
                 "segmented_images": ("IMAGE", {"forceInput": True}),
+                "output_dir": ("STRING", {"default": ""}),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
                 "iteration_count": ("INT", {"default": 0}),
                 "previous_image": ("IMAGE",),
+                "batch_id": ("STRING",),
             }
         }
         return inputs
 
-    RETURN_TYPES = ("FLOW_CONTROL", "IMAGE", "INT", "INT")
-    RETURN_NAMES = ("FLOW_CONTROL", "current_image", "max_iterations", "iteration_count")
+    RETURN_TYPES = ("FLOW_CONTROL", "IMAGE", "INT", "INT", "STRING")
+    RETURN_NAMES = ("FLOW_CONTROL", "current_image", "max_iterations", "iteration_count", "batch_path")
     FUNCTION = "while_loop_open"
     CATEGORY = "CyberEveLoop🐰·Chen定制"
 
@@ -48,11 +54,19 @@ class BatchImageLoopOpenSun:
             image = image.permute(0, 2, 3, 1)
         return image
 
-    def while_loop_open(self, segmented_images, unique_id=None, iteration_count=0, previous_image=None):
+    def while_loop_open(self, segmented_images, output_dir="", unique_id=None, iteration_count=0, previous_image=None, batch_id=None):
         print(f"[chen] Loop iteration: {iteration_count}")
 
         images = self.standardize_images(segmented_images)
         max_iterations = images.shape[0]
+
+        if batch_id is None:
+            batch_id = uuid.uuid4().hex[:8]
+
+        batch_path = os.path.join(output_dir, batch_id) if output_dir else ""
+        if batch_path and iteration_count == 0:
+            os.makedirs(batch_path, exist_ok=True)
+            print(f"[chen] Created batch directory: {batch_path}")
 
         if iteration_count >= max_iterations:
             raise ValueError(f"[chen] Iteration {iteration_count} exceeds max {max_iterations}")
@@ -63,7 +77,7 @@ class BatchImageLoopOpenSun:
             images[idx:idx+1] = previous_image
 
         current_image = images[iteration_count:iteration_count+1]
-        return ("stub", current_image, max_iterations, iteration_count)
+        return ("stub", current_image, max_iterations, iteration_count, batch_path)
 
 
 @VariantSupport()
@@ -78,6 +92,7 @@ class BatchImageLoopCloseSun:
                 "flow_control": ("FLOW_CONTROL", {"rawLink": True}),
                 "current_image": ("IMAGE",),
                 "max_iterations": ("INT", {"forceInput": True}),
+                "batch_path": ("STRING", {"forceInput": True}),
             },
             "optional": {
                 "pass_back": ("BOOLEAN", {"default": False}),
@@ -85,13 +100,12 @@ class BatchImageLoopCloseSun:
             "hidden": {
                 "dynprompt": "DYNPROMPT",
                 "unique_id": "UNIQUE_ID",
-                "result_images": ("IMAGE",),
                 "iteration_count": ("INT", {"default": 0}),
             }
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("result_images",)
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("result_images", "output_path")
     FUNCTION = "while_loop_close"
     CATEGORY = "CyberEveLoop🐰·Chen定制"
 
@@ -101,37 +115,46 @@ class BatchImageLoopCloseSun:
         assert len(image.shape) == 4, f"Image must be 4D [B,H,W,C], got {image.shape}"
         return image
 
-    def initialize_results(self, max_iterations, current_image):
-        assert len(current_image.shape) == 4
-        return torch.zeros(
-            (max_iterations, *current_image.shape[1:]),
-            dtype=current_image.dtype,
-            device=current_image.device
-        )
+    def save_image(self, image, batch_path, index):
+        if not batch_path:
+            return
+        img_np = (image.squeeze(0).cpu().numpy() * 255).clip(0, 255).astype(np.uint8)
+        img_pil = Image.fromarray(img_np)
+        filepath = os.path.join(batch_path, f"{index:05d}.png")
+        img_pil.save(filepath)
+        print(f"[chen] Saved: {filepath}")
 
-    def while_loop_close(self, flow_control, current_image, max_iterations,
+    def load_all_images(self, batch_path, max_iterations, device):
+        results = []
+        for i in range(max_iterations):
+            filepath = os.path.join(batch_path, f"{i:05d}.png")
+            img_pil = Image.open(filepath).convert("RGB")
+            img_np = np.array(img_pil).astype(np.float32) / 255.0
+            img_tensor = torch.from_numpy(img_np).unsqueeze(0)
+            results.append(img_tensor)
+        return torch.cat(results, dim=0).to(device)
+
+    def while_loop_close(self, flow_control, current_image, max_iterations, batch_path,
                          pass_back=False, iteration_count=0,
-                         result_images=None, dynprompt=None, unique_id=None):
+                         dynprompt=None, unique_id=None):
         print(f"[chen] Iteration {iteration_count} / {max_iterations}")
 
         current_image = self.standardize_image(current_image)
+        device = current_image.device
 
         if iteration_count >= max_iterations:
             raise ValueError(f"[chen] Iteration {iteration_count} exceeds max {max_iterations}")
 
-        if result_images is None:
-            result_images = self.initialize_results(max_iterations, current_image)
-        else:
-            assert result_images.shape[0] == max_iterations
-
-        result_images[iteration_count:iteration_count+1] = current_image
+        self.save_image(current_image, batch_path, iteration_count)
 
         if iteration_count == max_iterations - 1:
-            print(f"[chen] Loop finished")
-            return (result_images,)
+            print(f"[chen] Loop finished, loading results from {batch_path}")
+            if batch_path:
+                result_images = self.load_all_images(batch_path, max_iterations, device)
+            else:
+                result_images = current_image
+            return (result_images, batch_path)
 
-        # 构建图用于下一轮迭代
-        this_node = dynprompt.get_node(unique_id)
         open_node = flow_control[0]
 
         upstream = {}
@@ -176,7 +199,6 @@ class BatchImageLoopCloseSun:
 
         my_clone = graph.lookup_node("Recurse")
         my_clone.set_input("iteration_count", iteration_count + 1)
-        my_clone.set_input("result_images", result_images)
 
         new_open = graph.lookup_node(open_node)
         new_open.set_input("iteration_count", iteration_count + 1)
@@ -184,7 +206,7 @@ class BatchImageLoopCloseSun:
             new_open.set_input("previous_image", current_image)
 
         return {
-            "result": (my_clone.out(0),),
+            "result": (my_clone.out(0), my_clone.out(1)),
             "expand": graph.finalize()
         }
 
@@ -223,4 +245,3 @@ class BatchImageLoopCloseSun:
             if child_id not in contained:
                 contained[child_id] = True
                 self.collect_contained(child_id, upstream, contained)
-
