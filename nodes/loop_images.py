@@ -99,6 +99,7 @@ class BatchImageLoopCloseSun:
                 "current_image": ("IMAGE",),
                 "max_iterations": ("INT", {"forceInput": True}),
                 "batch_path": ("STRING", {"forceInput": True}),
+                "iteration_count": ("INT", {"forceInput": True}),
             },
             "optional": {
                 "pass_back": ("BOOLEAN", {"default": False}),
@@ -106,7 +107,6 @@ class BatchImageLoopCloseSun:
             "hidden": {
                 "dynprompt": "DYNPROMPT",
                 "unique_id": "UNIQUE_ID",
-                "iteration_count": ("INT", {"default": 0}),
             }
         }
 
@@ -122,9 +122,12 @@ class BatchImageLoopCloseSun:
         return image
 
     def save_image(self, image, batch_path, index):
+        filepath = os.path.join(batch_path, f"{index:05d}.png")
+        if os.path.exists(filepath):
+            print(f"[chen] Skip (exists): {filepath}")
+            return
         img_np = (image.squeeze(0).cpu().numpy() * 255).clip(0, 255).astype(np.uint8)
         img_pil = Image.fromarray(img_np)
-        filepath = os.path.join(batch_path, f"{index:05d}.png")
         img_pil.save(filepath)
         print(f"[chen] Saved: {filepath}")
 
@@ -139,7 +142,7 @@ class BatchImageLoopCloseSun:
         return torch.cat(results, dim=0).to(device)
 
     def while_loop_close(self, flow_control, current_image, max_iterations, batch_path,
-                         pass_back=False, iteration_count=0,
+                         iteration_count, pass_back=False,
                          dynprompt=None, unique_id=None):
         print(f"[chen] Iteration {iteration_count} / {max_iterations}")
 
