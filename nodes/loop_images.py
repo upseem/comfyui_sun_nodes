@@ -98,8 +98,8 @@ class BatchImageLoopCloseSun:
                 "flow_control": ("FLOW_CONTROL", {"rawLink": True}),
                 "current_image": ("IMAGE",),
                 "max_iterations": ("INT", {"forceInput": True}),
-                "batch_path": ("STRING", {"forceInput": True}),
                 "iteration_count": ("INT", {"forceInput": True}),
+                "batch_path": ("STRING", {"forceInput": True}),
             },
             "optional": {
                 "pass_back": ("BOOLEAN", {"default": False}),
